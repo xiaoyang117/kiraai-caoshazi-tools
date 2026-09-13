@@ -844,21 +844,22 @@ class IntimacyProgressPlugin(BasePlugin):
             left = max(0, self.image_max_per_round - st.images_this_round)
             lines.append("")
             lines.append("### 场景配图")
-            lines.append(
-                "- 氛围到位、画面感很强的时候，你可以用 `<img>画面描述</img>` 生成一张配图"
-                "（走系统配置的生图模型，会自动发给对方）。"
-            )
             if left > 0:
                 lines.append(
-                    f"- 本回合最多生成 {self.image_max_per_round} 张图，你还剩 **{left}** 张额度。"
+                    f"- **本回合你要生成配图**：用 `<img>画面描述</img>` 输出"
+                    f"（走系统配置的生图模型，会自动发给对方）。"
+                )
+                lines.append(
+                    f"- 本回合上限 {self.image_max_per_round} 张，你还剩 **{left}** 张额度。"
+                    "至少生成一张给这一段画面定格。"
                 )
             else:
                 lines.append(
                     "- **本回合的配图额度已经用完，不要再生成图片了**，继续用文字推进即可。"
                 )
             lines.append(
-                "- 不要每轮都画；只在值得定格的那一刻用。用文字写清楚画面："
-                "镜头、构图、光线、表情、姿态、衣着状态等，越具体越好。"
+                "- 画面描述要写具体：镜头、构图、光线、表情、姿态、衣着状态等；"
+                "贴合当前阶段和刚刚发生的情节，不要和上一张重复。"
             )
 
         lines.append("")
