@@ -102,6 +102,19 @@ DESIRE_ON_ADVANCE = 15
 DESIRE_ON_RETREAT = 12
 DESIRE_PER_ROUND = 3
 
+# Models occasionally express a tool call as literal markup instead of a real
+# function call. Because '<' must be escaped inside <text>, what reaches the
+# chat is a string like `&lt;report progress="..." /&gt;` (or the unescaped
+# form if the model nests it somewhere else). That leaks to the user as junk,
+# so we sweep it out of outgoing text. Covers this plugin's own tool names.
+_LEAKED_TOOL_MARKUP_RE = re.compile(
+    r"&lt;\s*/?\s*(?:int_)?(?:report|advance|retreat|status|part|desire|reset)\b"
+    r"[^&]*?(?:/&gt;|&gt;)"
+    r"|<\s*/?\s*(?:int_)?(?:report|advance|retreat|status|part|desire|reset)\b"
+    r"[^<>]*?(?:/?>)",
+    re.IGNORECASE,
+)
+
 # Body-part tracker. The AI reports hits through the int_part tool; the WebUI
 # shows a per-session tally. `part_names` in the config overrides this list.
 DEFAULT_PARTS = [
@@ -824,8 +837,13 @@ class IntimacyProgressPlugin(BasePlugin):
                 )
             else:
                 lines.append(
-                    "- **本轮你必须先调用 `int_report` 回报一次当前进度，然后再开始写正文。**"
+                    "- **本轮你必须先调用 `int_report` 工具**回报一次当前进度，然后再开始写正文。"
                     "这是每轮都要做的，不是可选项。"
+                )
+                lines.append(
+                    "- `int_report` 是一个**函数工具**，请通过**工具调用**提交。"
+                    "**绝对不要**在消息正文里写 `<report .../>`、`&lt;report .../&gt;` "
+                    "或任何标签形式的回报——那会被当成发给对方的消息，对方只会看到一串乱码。"
                 )
                 lines.append(
                     "- `int_report` 的 `progress` 就是你判断的当前阶段名称"
@@ -1419,6 +1437,8 @@ class IntimacyProgressPlugin(BasePlugin):
                 "之后每一轮都会自动收到进度提示。\n"
                 "如果对方明确停下或场景结束，调用 `int_reset(reason?)` 收尾。\n"
                 "不确定当前状态时可以调 `int_status()` 查看。\n"
+                "**当前没有进行中的场景，所以不要回报进度、也不要输出任何进度标签；**"
+                "只有真的进入场景之后才需要那套动作。\n"
                 "**不要在气氛还不够时急着调用**；没有合适时机就什么都不用做。\n"
             )
             if self.track_parts:
@@ -1431,6 +1451,41 @@ class IntimacyProgressPlugin(BasePlugin):
             if p.name == "tools":
                 p.content += note
                 break
+
+    @on.after_xml_parse(priority=Priority.LOW)
+    async def hook_strip_leaked_markup(self, event: KiraMessageBatchEvent, actions: list, *_):
+        """Remove tool-call markup the model leaked into message text.
+
+        An LLM asked to "call int_report" sometimes emits a literal
+        ``<report .../>`` (escaped, because it sits inside ``<text>``) rather
+        than making a real function call. That string would otherwise be sent
+        to the user verbatim. We can't un-send it from the model's side, but we
+        can make sure it never reaches the chat.
+        """
+        if not self.enabled or not self._scope_allows(event):
+            return
+
+        stripped = 0
+        for action in actions:
+            chain = getattr(action, "message_list", None)
+            if not isinstance(chain, list):
+                continue
+            for ele in chain:
+                if not isinstance(ele, Text):
+                    continue
+                body = ele.text
+                if not body:
+                    continue
+                cleaned = _LEAKED_TOOL_MARKUP_RE.sub("", body).strip()
+                if cleaned != body:
+                    ele.text = cleaned
+                    stripped += 1
+
+        if stripped:
+            self._log(
+                f"session {event.sid} stripped leaked tool markup from "
+                f"{stripped} message element(s)"
+            )
 
     @on.after_xml_parse(priority=Priority.MEDIUM)
     async def hook_count_scene_images(self, event: KiraMessageBatchEvent, actions: list, *_):
