@@ -1,0 +1,134 @@
+{
+  "enabled": {
+    "name": "启用插件",
+    "type": "boolean",
+    "default": false,
+    "hint": "总开关，默认关闭。打开后插件才会接管亲密场景的进度跟踪。"
+  },
+  "use_detect": {
+    "name": "关键词识别场景",
+    "type": "boolean",
+    "default": false,
+    "hint": "根据消息里的关键词自动进入/退出亲密场景。关闭后只能由 AI 通过工具主动开始。"
+  },
+  "detect_keywords": {
+    "name": "入场关键词",
+    "type": "list",
+    "default": [],
+    "hint": "留空使用内置词库（亲吻/抚摸/脱衣/进入……等）。填写后覆盖内置，命中任一即进入场景。需先打开上面的关键词识别。"
+  },
+  "exit_keywords": {
+    "name": "离场关键词",
+    "type": "list",
+    "default": [],
+    "hint": "留空使用内置词库（停下/不要了/结束/累了……等）。命中即退出场景并清空进度。需先打开关键词识别。"
+  },
+  "ntr": {
+    "name": "NTR 模式（对所有人生效）",
+    "type": "boolean",
+    "default": false,
+    "hint": "打开后插件对任何用户都生效，下面的白名单会被忽略。关闭时只有白名单里的用户能用。"
+  },
+  "user_whitelist": {
+    "name": "用户白名单",
+    "type": "list",
+    "default": [],
+    "hint": "填 QQ 号（也可以填群号或昵称），回车确认，可填多个。仅在 NTR 模式关闭时生效；留空表示谁都不生效。"
+  },
+  "inject_progress": {
+    "name": "向 AI 注入进度",
+    "type": "boolean",
+    "default": false,
+    "hint": "把当前阶段、轮次、进度条写进系统提示词，让 AI 知道进行到哪一步。关闭后进度只在侧边栏可见，AI 感知不到。"
+  },
+  "inject_stage_hint": {
+    "name": "注入阶段写作指引",
+    "type": "boolean",
+    "default": false,
+    "hint": "为每个阶段附带写作指引（节奏、该侧重什么）。需先打开「向 AI 注入进度」。"
+  },
+  "force_report": {
+    "name": "强制每轮回报进度",
+    "type": "boolean",
+    "default": false,
+    "hint": "每轮都由 AI 主动调用 int_report 回报一次当前进度，并说明下一步，回报后才会开始写正文。需先打开「向 AI 注入进度」。"
+  },
+  "announce_tools": {
+    "name": "主动告知 AI 工具的存在",
+    "type": "boolean",
+    "default": false,
+    "hint": "即使当前没有场景在跑，也把工具说明写进提示词，让 AI 知道可以自己开启场景。不开的话，AI 只有在你主动触发或被关键词命中后才知道这套工具。需先打开「向 AI 注入进度」。"
+  },
+  "auto_advance": {
+    "name": "自动推进进度",
+    "type": "boolean",
+    "default": false,
+    "hint": "AI 连续多轮没有主动推进时，自动前进一级，防止剧情卡死。"
+  },
+  "auto_advance_rounds": {
+    "name": "自动推进阈值（轮）",
+    "type": "integer",
+    "default": 3,
+    "minimum": 1,
+    "hint": "连续多少轮没有推进就自动前进一级。数值越小推进越快。需先打开自动推进。"
+  },
+  "scene_timeout_minutes": {
+    "name": "场景超时（分钟）",
+    "type": "number",
+    "default": 0,
+    "minimum": 0,
+    "hint": "超过该时长没有新消息就视为场景结束并重置。设为 0 表示永不超时。"
+  },
+  "track_desire": {
+    "name": "追踪兴奋度",
+    "type": "boolean",
+    "default": false,
+    "hint": "额外维护一个 0-100 的兴奋度数值，随进度与轮次增长，让节奏更细腻。"
+  },
+  "allow_llm_desire": {
+    "name": "允许 AI 控制兴奋度",
+    "type": "boolean",
+    "default": false,
+    "hint": "把 int_desire 工具提供给 AI，让它能直接增减兴奋度（正数升温、负数降温）。需先打开「追踪兴奋度」。"
+  },
+  "track_parts": {
+    "name": "统计分部位次数",
+    "type": "boolean",
+    "default": false,
+    "hint": "AI 在场景收尾时通过 int_part 汇报各部位次数，侧边栏按用户累计展示。累计记录不会因场景重置而清空。"
+  },
+  "part_names": {
+    "name": "部位列表",
+    "type": "list",
+    "default": [],
+    "hint": "侧边栏统计与工具提示里使用的部位名。留空使用内置列表（唇/舌/颈/耳/胸/腰/背/臀/腿/私处）。需先打开分部位统计。"
+  },
+  "stage_names": {
+    "name": "自定义阶段名称",
+    "type": "list",
+    "default": [],
+    "hint": "按顺序填写自定义阶段名（例如：试探/升温/前戏/结合/高潮/余韵）。留空使用内置 6 阶段。"
+  },
+  "allow_llm_reset": {
+    "name": "允许 AI 主动重置",
+    "type": "boolean",
+    "default": false,
+    "hint": "把重置工具提供给 AI，让它能自己中断/结束当前场景。"
+  },
+  "proactive_end": {
+    "name": "让 AI 更主动收尾",
+    "type": "boolean",
+    "default": false,
+    "hint": "进入最后阶段后，随停留轮数升级催促，让 AI 主动写出结尾并调用 int_reset 结束，而不是一直拖着。需先打开「允许 AI 主动重置」。"
+  },
+  "log_level": {
+    "name": "日志详细程度",
+    "type": "select",
+    "options": [
+      { "label": "仅关键事件", "value": "info" },
+      { "label": "详细调试", "value": "debug" }
+    ],
+    "default": "info",
+    "hint": "调试时选「详细调试」查看每次识别与推进的过程。"
+  }
+}

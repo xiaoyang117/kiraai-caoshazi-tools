@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>草傻子专用</title>
+<style>
+  :root {
+    --bg: #f6f7fb;
+    --panel: #ffffff;
+    --panel-2: #f9fafb;
+    --text: #1f2937;
+    --text-dim: #6b7280;
+    --line: #e5e7eb;
+    --accent: #e11d48;
+    --accent-soft: #ffe4e6;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
+  }
+  [data-theme="dark"] {
+    --bg: #0f1117;
+    --panel: #171a21;
+    --panel-2: #1d2129;
+    --text: #e6e8ee;
+    --text-dim: #9aa3b2;
+    --line: #2a2f3a;
+    --accent: #fb7185;
+    --accent-soft: #3b1220;
+    --ok: #4ade80;
+    --warn: #fbbf24;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; }
+
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  h1 { font-size: 1.2rem; margin: 0; font-weight: 650; letter-spacing: .2px; }
+  .sub { color: var(--text-dim); font-size: .78rem; }
+
+  .grow { flex: 1; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .stat .k { font-size: .72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+  .stat .v { font-size: 1.5rem; font-weight: 650; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .stat .v.accent { color: var(--accent); }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden; margin-bottom: 18px;
+  }
+  .panel > .hd {
+    padding: 12px 16px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px; background: var(--panel-2);
+  }
+  .panel > .hd h2 { font-size: .9rem; margin: 0; font-weight: 600; }
+  .panel > .hd .hint { font-size: .74rem; color: var(--text-dim); }
+  .panel > .bd { padding: 16px; }
+
+  button {
+    font: inherit; padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    transition: background .12s, border-color .12s, opacity .12s;
+  }
+  button:hover { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { opacity: .88; }
+  button.tiny { padding: 4px 10px; font-size: .78rem; }
+  button.danger { color: var(--accent); border-color: var(--accent-soft); }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 600;
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text-dim);
+  }
+  .pill.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); font-size: .84rem; }
+  th { color: var(--text-dim); font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover { background: var(--panel-2); }
+
+  .sid { font-family: ui-monospace, Consolas, monospace; font-size: .78rem; word-break: break-all; }
+
+  /* stage progress bar */
+  .bar { display: flex; gap: 3px; min-width: 132px; }
+  .bar i {
+    flex: 1; height: 8px; border-radius: 3px;
+    background: var(--line); transition: background .25s;
+  }
+  .bar i.done { background: var(--accent); }
+  .bar i.cur { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .stage-name { font-weight: 600; font-size: .84rem; }
+  .stage-idx { color: var(--text-dim); font-size: .72rem; }
+
+  .desire { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+  .desire .track { flex: 1; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  .desire .fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width .3s; }
+  .desire .num { font-size: .74rem; color: var(--text-dim); font-variant-numeric: tabular-nums; min-width: 48px; text-align: right; }
+
+  .empty { text-align: center; color: var(--text-dim); padding: 32px 8px; font-size: .85rem; }
+
+  .msg {
+    margin-bottom: 14px; padding: 9px 14px; border-radius: 8px; font-size: .82rem;
+    display: none; border: 1px solid transparent;
+  }
+  .msg.show { display: block; }
+  .msg.err { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  .msg.ok { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+  [data-theme="dark"] .msg.err { background: #3b1214; color: #fca5a5; border-color: #7f1d1d; }
+  [data-theme="dark"] .msg.ok { background: #0f2a18; color: #86efac; border-color: #14532d; }
+
+  /* Persistent connection banner — replaces the old repeating toast. */
+  #banner {
+    display: none; margin-bottom: 14px; padding: 8px 14px; border-radius: 8px;
+    font-size: .82rem; background: #fffbeb; color: #92400e; border: 1px solid #fde68a;
+  }
+  [data-theme="dark"] #banner { background: #2a1f08; color: #fcd34d; border-color: #78350f; }
+
+  .stages { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stages span {
+    padding: 3px 10px; border-radius: 999px; font-size: .76rem;
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--text-dim);
+  }
+  .stages span.hl { background: var(--accent-soft); color: var(--accent); border-color: transparent; font-weight: 600; }
+
+  /* ---------------- stage progress bar ---------------- */
+  .sbar { display: flex; flex-direction: column; gap: 10px; }
+
+  .sbar-track {
+    display: flex; align-items: stretch; gap: 4px;
+    height: 34px; width: 100%;
+  }
+  .sbar-seg {
+    position: relative; flex: 1 1 0; min-width: 0;
+    background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: 8px; overflow: hidden;
+    transition: background .25s, border-color .25s, transform .25s;
+  }
+  /* done: already passed through this stage */
+  .sbar-seg.done { background: var(--accent); border-color: var(--accent); }
+  /* cur: the stage we are in right now */
+  .sbar-seg.cur {
+    background: var(--accent); border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .sbar-seg .seg-fill {
+    position: absolute; inset: 0; transform-origin: left center;
+    background: var(--accent); opacity: .45;
+    transition: width .3s;
+  }
+  .sbar-seg .seg-label {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .74rem; font-weight: 600; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; padding: 0 6px;
+    color: var(--text-dim);
+  }
+  .sbar-seg.done .seg-label, .sbar-seg.cur .seg-label { color: #fff; }
+  .sbar-seg .seg-idx {
+    position: absolute; top: 2px; left: 6px;
+    font-size: .6rem; font-weight: 700; opacity: .55;
+    color: var(--text-dim);
+  }
+  .sbar-seg.done .seg-idx, .sbar-seg.cur .seg-idx { color: #fff; opacity: .8; }
+
+  /* when there are many stages the labels stop fitting: drop to a bare bar */
+  .sbar.compact .seg-label { display: none; }
+
+  .sbar-foot {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: .76rem; color: var(--text-dim);
+  }
+  .sbar-foot .now { color: var(--accent); font-weight: 650; font-size: .84rem; }
+  .sbar-foot .sep { opacity: .4; }
+  .sbar-legend { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+  .sbar-legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+  .sbar-legend .k-done { background: var(--accent); }
+  .sbar-legend .k-cur { background: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .sbar-legend .k-todo { background: var(--panel-2); border: 1px solid var(--line); }
+
+  /* ---------------- per-user part tally ---------------- */
+  .parts-grid { display: flex; flex-direction: column; gap: 16px; }
+
+  .puser {
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    background: var(--panel);
+  }
+  .puser > .phead {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 9px 13px; background: var(--panel-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .puser > .phead .psid {
+    font-family: ui-monospace, Consolas, monospace; font-size: .78rem;
+    font-weight: 600; word-break: break-all;
+  }
+  .puser > .phead .ptotal {
+    font-size: .72rem; color: var(--text-dim);
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .puser > .phead .grow { flex: 1; }
+
+  .puser > .pbody { padding: 11px 13px; }
+
+  .prow {
+    display: grid; grid-template-columns: 88px 46px 1fr;
+    align-items: center; gap: 10px; padding: 5px 0;
+  }
+  .prow .pname {
+    font-size: .8rem; font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .prow .pcount {
+    font-size: .8rem; font-variant-numeric: tabular-nums;
+    color: var(--accent); font-weight: 650; text-align: right;
+  }
+  .prow .pbar { height: 8px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+  .prow .pbar i { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+
+  .parts-empty { font-size: .8rem; color: var(--text-dim); padding: 10px 0; }
+  .parts-hint { font-size: .72rem; color: var(--text-dim); margin-top: 4px; }
+
+  /* ---------------- config editor ---------------- */
+  .cfg-body { padding: 0; }
+
+  .cfg-section { border-bottom: 1px solid var(--line); }
+  .cfg-section:last-child { border-bottom: 0; }
+
+  .cfg-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 16px; background: var(--panel-2); cursor: pointer;
+    user-select: none;
+  }
+  .cfg-head:hover { background: var(--panel-2); }
+  .cfg-head .arrow {
+    font-size: .7rem; color: var(--text-dim); width: 10px;
+    transition: transform .15s; display: inline-block;
+  }
+  .cfg-head.collapsed .arrow { transform: rotate(-90deg); }
+  .cfg-head h3 { font-size: .82rem; margin: 0; font-weight: 650; }
+  .cfg-head .count { font-size: .72rem; color: var(--text-dim); }
+
+  .cfg-fields { padding: 6px 16px 14px; }
+  .cfg-section.closed .cfg-fields { display: none; }
+
+  .field {
+    display: grid; grid-template-columns: 200px 1fr; gap: 8px 16px;
+    padding: 11px 0; border-bottom: 1px dashed var(--line);
+    align-items: start;
+  }
+  .cfg-fields .field:last-child { border-bottom: 0; }
+
+  .field > .lbl { padding-top: 4px; }
+  .field .fname { font-size: .82rem; font-weight: 600; }
+  .field .fhint { font-size: .72rem; color: var(--text-dim); line-height: 1.45; margin-top: 2px; }
+  .field .fkey {
+    font-family: ui-monospace, Consolas, monospace; font-size: .68rem;
+    color: var(--text-dim); opacity: .7;
+  }
+
+  .field .ctl { min-width: 0; }
+
+  .field.invalid { background: var(--accent-soft); border-radius: 8px; }
+  .field.invalid .fname { color: var(--accent); }
+  .field.invalid input, .field.invalid textarea, .field.invalid select,
+  .field.invalid .tags { border-color: var(--accent); }
+
+  input[type="text"], input[type="number"], textarea, select {
+    font: inherit; width: 100%; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  textarea { resize: vertical; min-height: 68px; line-height: 1.55; }
+  input[type="number"] { max-width: 160px; }
+
+  /* switch */
+  .sw { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; }
+  .sw input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .sw .track {
+    width: 38px; height: 21px; border-radius: 999px; background: var(--line);
+    position: relative; transition: background .15s; flex: 0 0 auto;
+  }
+  .sw .track::after {
+    content: ''; position: absolute; top: 2.5px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%; background: #fff;
+    transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  }
+  .sw input:checked + .track { background: var(--accent); }
+  .sw input:checked + .track::after { transform: translateX(17px); }
+  .sw input:focus-visible + .track { box-shadow: 0 0 0 3px var(--accent-soft); }
+  .sw .state { font-size: .78rem; color: var(--text-dim); }
+
+  select { cursor: pointer; }
+
+  /* tag chips for list fields */
+  .tags {
+    display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+    min-height: 34px; padding: 5px 8px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel);
+  }
+  .tags:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .tags .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 4px 2px 9px; border-radius: 999px; font-size: .76rem;
+    background: var(--accent-soft); color: var(--accent);
+  }
+  [data-theme="dark"] .tags .tag { color: var(--accent); }
+  .tags .tag b { font-weight: 500; }
+  .tags .tag button {
+    border: 0; background: transparent; color: inherit; cursor: pointer;
+    padding: 0 2px; font-size: .9rem; line-height: 1; opacity: .6;
+  }
+  .tags .tag button:hover { opacity: 1; }
+  .tags input {
+    border: 0 !important; background: transparent !important; flex: 1 1 90px;
+    min-width: 90px; padding: 3px 2px !important; box-shadow: none !important;
+  }
+  .tags input:focus { box-shadow: none !important; }
+
+  .list-empty {
+    font-size: .74rem; color: var(--text-dim);
+    background: var(--panel-2); border: 1px dashed var(--line);
+    border-radius: 8px; padding: 5px 10px; margin-top: 6px;
+  }
+  .list-empty code { font-size: .72rem; }
+
+  .stages-edit { display: flex; flex-direction: column; gap: 6px; }
+  .stages-edit .srow { display: flex; align-items: center; gap: 8px; }
+  .stages-edit .sidx {
+    width: 22px; height: 22px; flex: 0 0 auto; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .7rem; font-weight: 700;
+  }
+  .stages-edit .srow input { flex: 1; }
+  .stages-edit .srow button {
+    border: 0; background: transparent; color: var(--text-dim);
+    cursor: pointer; padding: 2px 6px; font-size: .9rem;
+  }
+  .stages-edit .srow button:hover { color: var(--accent); }
+  .stages-edit .srow button:disabled {
+    opacity: .3; cursor: default; color: var(--text-dim);
+  }
+  .stages-edit .stools {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 2px;
+  }
+  .stages-edit .snote { font-size: .72rem; color: var(--text-dim); }
+  .stages-edit .snote.warn { color: var(--warn); }
+
+  .cfg-bar {
+    position: sticky; bottom: 0; z-index: 5;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 11px 16px; border-top: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .cfg-bar .dirty {
+    font-size: .76rem; color: var(--warn); font-weight: 600;
+    display: none; align-items: center; gap: 5px;
+  }
+  .cfg-bar .dirty.show { display: inline-flex; }
+  .cfg-bar .save-state { font-size: .74rem; color: var(--text-dim); }
+  .cfg-bar .save-state.err { color: var(--accent); }
+
+  @media (max-width: 620px) {
+    .field { grid-template-columns: 1fr; gap: 6px; }
+    .field > .lbl { padding-top: 0; }
+  }
+
+  /* section divider between the config block and the runtime dashboard */
+  .sechead {
+    display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+    margin: 22px 0 12px; padding-left: 2px;
+  }
+  .sechead h2 { font-size: .95rem; margin: 0; font-weight: 650; }
+  .sechead .hint { font-size: .74rem; color: var(--text-dim); }
+
+  /* top-level tab bar */
+  .tabs {
+    display: flex; gap: 4px; margin: 14px 0 0;
+    border-bottom: 1px solid var(--border, rgba(0,0,0,.12));
+    padding-bottom: 0;
+  }
+  .tabs .tab {
+    appearance: none; background: transparent; border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px; padding: 8px 14px;
+    font: inherit; font-size: .88rem; font-weight: 550;
+    color: var(--text-dim); cursor: pointer; border-radius: 6px 6px 0 0;
+  }
+  .tabs .tab:hover { color: var(--text, inherit); background: rgba(127,127,127,.08); }
+  .tabs .tab.active {
+    color: var(--accent, #c2185b);
+    border-bottom-color: var(--accent, #c2185b);
+  }
+  .tabs .tab:focus-visible { outline: 2px solid var(--accent, #c2185b); outline-offset: -2px; }
+  /* A dot on the config tab while edits are pending, so a hidden tab still
+     tells the user there is something to save. */
+  .tabs .tab .dot {
+    display: none; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--warn, #d9822b); margin-left: 6px; vertical-align: middle;
+  }
+  .tabs .tab.dirty .dot { display: inline-block; }
+
+  /* `hidden` must win over any display rule we set on the pane */
+  .tabpane[hidden] { display: none !important; }
+  .tabpane { padding-top: 2px; }
+
+  /* when the master switch is off the dashboard is inert: keep it visible so
+     the layout does not jump, but make it obvious nothing is running. */
+  #runtime.off { opacity: .5; filter: grayscale(.35); pointer-events: none; }
+  #runtime.off::after { content: none; }
+
+  /* a field whose parent switch is off: still readable, clearly not editable */
+  .field.dep-off > .lbl { opacity: .55; }
+  .field.dep-off > .lbl::after {
+    content: '（需先打开上级开关）';
+    display: block; font-size: .68rem; font-weight: 400;
+    color: var(--warn, #b8860b); opacity: .9; margin-top: 2px;
+  }
+  .field.dep-off > .ctl { opacity: .5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>草傻子专用</h1>
+      <div class="sub">Intimacy Progress · 让 AI 知道当前进行到哪一步</div>
+    </div>
+    <div class="grow"></div>
+    <span class="pill" id="pill-enabled">—</span>
+    <button id="btn-refresh" class="tiny">刷新</button>
+    <button id="btn-toggle" class="tiny primary">—</button>
+  </header>
+
+  <div id="msg" class="msg"></div>
+  <div id="banner"></div>
+
+  <!-- The panel is a single long page otherwise; two tabs keep "what do I
+       configure" and "what is happening" from competing for the same scroll
+       position. Switching tabs only toggles visibility, so an unsaved edit is
+       never discarded by navigation. -->
+  <div class="tabs" id="tabs" role="tablist">
+    <button class="tab active" id="tab-btn-config" role="tab"
+            aria-controls="tabpane-config" aria-selected="true">配置</button>
+    <button class="tab" id="tab-btn-runtime" role="tab"
+            aria-controls="tabpane-runtime" aria-selected="false">运行状态</button>
+  </div>
+
+  <div id="tabpane-config" class="tabpane" role="tabpanel">
+  <!-- Configuration comes first: on a fresh install every feature is off, so
+       this is the only thing there is to do. -->
+  <div class="panel">
+    <div class="hd">
+      <h2>配置</h2>
+      <span class="hint" id="cfg-summary"></span>
+      <div class="grow"></div>
+      <button id="btn-cfg-reload" class="tiny">放弃修改</button>
+    </div>
+    <div class="bd cfg-body">
+      <div id="cfg-form"></div>
+      <div class="cfg-bar">
+        <button id="btn-cfg-save" class="primary" disabled>保存配置</button>
+        <span class="dirty" id="cfg-dirty">● 有未保存的修改</span>
+        <span class="save-state" id="cfg-state"></span>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div id="tabpane-runtime" class="tabpane" role="tabpanel" hidden>
+  <div class="sechead">
+    <h2>运行状态</h2>
+    <span class="hint" id="runtime-hint"></span>
+  </div>
+
+  <div id="runtime">
+  <div class="stats">
+    <div class="stat"><div class="k">进行中场景</div><div class="v accent" id="st-active">0</div></div>
+    <div class="stat"><div class="k">生效对象</div><div class="v" id="st-scope">—</div></div>
+    <div class="stat"><div class="k">自动推进</div><div class="v" id="st-auto">—</div></div>
+    <div class="stat"><div class="k">场景超时</div><div class="v" id="st-timeout">—</div></div>
+    <div class="stat"><div class="k">部位总次数</div><div class="v accent" id="st-parts">0</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="hd">
+      <h2>活跃场景</h2>
+      <div class="grow"></div>
+      <button id="btn-reset-all" class="tiny danger">结束所有场景</button>
+    </div>
+    <div class="bd" style="padding:0">
+      <table>
+        <thead>
+          <tr>
+            <th>会话</th>
+            <th>阶段</th>
+            <th>进度</th>
+            <th>兴奋度</th>
+            <th>阶段轮次</th>
+            <th>部位次数</th>
+            <th>空闲</th>
+            <th style="width:1%"></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="empty">暂无进行中的场景</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="hd"><h2>阶段序列</h2><span class="hint" id="stages-hint"></span></div>
+    <div class="bd"><div class="sbar" id="stages"></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="hd">
+      <h2>分部位次数</h2>
+      <span class="hint">按用户分组 · 由 AI 通过 int_part 记录</span>
+      <div class="grow"></div>
+      <button id="btn-parts-reload" class="tiny">刷新统计</button>
+    </div>
+    <div class="bd">
+      <div class="parts-grid" id="parts-grid"></div>
+    </div>
+  </div>
+  </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var PPC = window.PluginPageContext;
+
+  // ---- Fallback shim: lets this page work outside the KiraAI shell too ----
+  if (!PPC) {
+    var base = '/api/plugin/intimacy_progress';
+    PPC = {
+      ready: function () { return Promise.resolve(); },
+      api: {
+        get: function (p) { return fetch(base + p, { credentials: 'include' }).then(parseResp); },
+        post: function (p, body) {
+          return fetch(base + p, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {})
+          }).then(parseResp);
+        }
+      }
+    };
+    function parseResp(r) {
+      if (!r.ok) { return r.text().then(function (t) { throw new Error(t || ('HTTP ' + r.status)); }); }
+      return r.json();
+    }
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  var lastState = null;
+
+  // Live draft of the config form, keyed by field name.
+  var draft = {};
+  // Field name -> the DOM control that produced it, for error highlighting.
+  var controls = {};
+  var committed = {};          // last value known to be persisted
+  var formBuilt = false;
+
+  function toast(text, kind) {
+    var m = $('msg');
+    m.textContent = text;
+    m.className = 'msg show ' + (kind || '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { m.className = 'msg'; }, 3200);
+  }
+
+  function errMsg(e) { return (e && e.message) ? e.message : String(e); }
+
+  function fmtDur(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    if (sec < 60) return sec + 's';
+    if (sec < 3600) return Math.floor(sec / 60) + 'm';
+    return Math.floor(sec / 3600) + 'h' + Math.floor((sec % 3600) / 60) + 'm';
+  }
+
+
+  // ================================================================== //
+  // Tabs
+  // ================================================================== //
+
+  var TABS = [
+    { id: 'config', btn: 'tab-btn-config', pane: 'tabpane-config' },
+    { id: 'runtime', btn: 'tab-btn-runtime', pane: 'tabpane-runtime' },
+  ];
+  var activeTab = 'config';
+
+  function showTab(id) {
+    var hit = null;
+    TABS.forEach(function (t) {
+      var btn = $(t.btn), pane = $(t.pane);
+      var on = (t.id === id);
+      if (on) hit = t;
+      if (btn) {
+        btn.className = 'tab' + (on ? ' active' : '') +
+          (t.id === 'config' && isDirty() ? ' dirty' : '');
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      }
+      // Merely toggles visibility: the form DOM (and with it every unsaved
+      // edit and inline error) is left untouched.
+      if (pane) { if (on) pane.removeAttribute('hidden'); else pane.setAttribute('hidden', ''); }
+    });
+    activeTab = hit ? id : 'config';
+    try { localStorage.setItem('ip.tab', activeTab); } catch (e) { /* private mode */ }
+  }
+
+  function markTabDirty(dirty) {
+    var btn = $('tab-btn-config');
+    if (!btn) return;
+    var has = (' ' + btn.className + ' ').indexOf(' dirty ') !== -1;
+    if (dirty && !has) btn.className = btn.className + ' dirty';
+    else if (!dirty && has) btn.className = btn.className.replace(/\s*dirty\b/g, '');
+  }
+
+  function resetTabs() {
+    TABS.forEach(function (t) {
+      var btn = $(t.btn);
+      if (!btn) return;
+      btn.addEventListener('click', function () { showTab(t.id); });
+    });
+    var saved = null;
+    try { saved = localStorage.getItem('ip.tab'); } catch (e) { /* ignore */ }
+    showTab(saved === 'runtime' ? 'runtime' : 'config');
+  }
+
+  // ================================================================== //
+  // Config form
+  // ================================================================== //
+
+  function deepEqual(a, b) {
+    if (a === b) return true;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      return a.length === b.length && a.every(function (v, i) { return v === b[i]; });
+    }
+    return false;
+  }
+
+  function fieldLabel(name, meta) {
+    return (meta && (meta.name || meta.title)) || name;
+  }
+
+  function fieldHint(meta) {
+    return (meta && meta.hint) || '';
+  }
+
+  function isDirty() {
+    return Object.keys(draft).some(function (k) {
+      return !deepEqual(draft[k], committed[k]);
+    });
+  }
+
+  function markDirty() {
+    var dirty = isDirty();
+    $('cfg-dirty').className = 'dirty' + (dirty ? ' show' : '');
+    $('btn-cfg-save').disabled = !dirty;
+    markTabDirty(dirty);
+  }
+
+  // Called from every control event: a new edit invalidates whatever the last
+  // save attempt reported, so the stale "已保存" / error text is dropped here
+  // rather than inside markDirty() (which the save path itself also calls).
+  function markEdited() {
+    setSaveState('');
+    clearFieldErrors();
+    refreshDependencies();
+    markDirty();
+  }
+
+  function setSaveState(text, isErr) {
+    var el = $('cfg-state');
+    el.textContent = text || '';
+    el.className = 'save-state' + (isErr ? ' err' : '');
+  }
+
+  // ---- control factories -------------------------------------------- //
+
+  function mkSwitch(name, meta, value) {
+    var wrap = document.createElement('label');
+    wrap.className = 'sw';
+    var input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = !!value;
+    var track = document.createElement('span');
+    track.className = 'track';
+    var state = document.createElement('span');
+    state.className = 'state';
+    state.textContent = value ? '开启' : '关闭';
+
+    input.addEventListener('change', function () {
+      draft[name] = input.checked;
+      state.textContent = input.checked ? '开启' : '关闭';
+      markEdited();
+    });
+
+    wrap.appendChild(input);
+    wrap.appendChild(track);
+    wrap.appendChild(state);
+    controls[name] = input;
+    return wrap;
+  }
+
+  function mkSelect(name, meta, value) {
+    var sel = document.createElement('select');
+    (meta.options || []).forEach(function (o) {
+      if (!o || typeof o !== 'object') return;
+      var opt = document.createElement('option');
+      opt.value = String(o.value);
+      opt.textContent = o.label != null ? String(o.label) : String(o.value);
+      sel.appendChild(opt);
+    });
+    sel.value = value == null ? '' : String(value);
+    if (!sel.value && sel.options.length) { sel.selectedIndex = 0; draft[name] = sel.value; }
+    sel.addEventListener('change', function () {
+      draft[name] = sel.value;
+      markEdited();
+    });
+    controls[name] = sel;
+    return sel;
+  }
+
+  function mkNumber(name, meta, value) {
+    var input = document.createElement('input');
+    input.type = 'number';
+    var isInt = String(meta.type) === 'integer';
+    input.step = isInt ? '1' : '0.5';
+    if (meta.minimum != null) input.min = meta.minimum;
+    else input.min = isInt && name === 'auto_advance_rounds' ? 1 : 0;
+    input.value = value == null ? '' : value;
+    input.addEventListener('input', function () {
+      // Keep the raw string so a half-typed value is not destroyed; the
+      // backend coerces and validates on save.
+      draft[name] = input.value === '' ? null : input.value;
+      markEdited();
+    });
+    controls[name] = input;
+    return input;
+  }
+
+  function mkTags(name, meta, value, placeholder) {
+    // Same reason as the stage editor: always read the current draft value
+    // instead of closing over the array this control was built with.
+    function read() {
+      return Array.isArray(draft[name]) ? draft[name].slice() : [];
+    }
+    function write(next) {
+      draft[name] = next;
+      markEdited();
+    }
+
+    var box = document.createElement('div');
+    box.className = 'tags';
+
+    function paint() {
+      var list = read();
+      box.innerHTML = '';
+      list.forEach(function (word, i) {
+        var chip = document.createElement('span');
+        chip.className = 'tag';
+        var b = document.createElement('b');
+        b.textContent = word;
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.textContent = '×';
+        x.title = '移除';
+        x.addEventListener('click', function () {
+          var next = read();
+          next.splice(i, 1);
+          write(next);
+          paint();
+        });
+        chip.appendChild(b);
+        chip.appendChild(x);
+        box.appendChild(chip);
+      });
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = placeholder || '输入后按回车';
+      input.value = '';
+      input.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ',' || ev.key === '，') {
+          ev.preventDefault();
+          add(input.value);
+        } else if (ev.key === 'Backspace' && input.value === '' && read().length) {
+          var next = read();
+          next.pop();
+          write(next);
+          paint();
+        }
+      });
+      input.addEventListener('blur', function () { add(input.value); });
+
+      function add(raw) {
+        // Match the backend's splitting: newline / comma / ideographic comma.
+        var next = read();
+        raw.split(/[\n,，、]+/).forEach(function (part) {
+          var w = part.trim();
+          if (w && next.indexOf(w) === -1) next.push(w);
+        });
+        write(next);
+        paint();
+        var el = box.querySelector('input');
+        if (el) el.focus();
+      }
+
+      box.appendChild(input);
+      controls[name] = input;
+      reapplyRowGuards();
+    }
+
+    paint();
+    return box;
+  }
+
+  function mkStageEditor(name, meta, value) {
+    // Every mutation re-reads draft[name] rather than closing over a local
+    // array: a poll replaces draft[name] wholesale, so a captured array would
+    // silently go stale and edits would write into a detached copy.
+    //
+    // Until something is customised (stage_names empty = "use the built-in
+    // sequence") the editor seeds itself from the sequence the backend is
+    // actually running, so the user rearranges the real list instead of
+    // retyping it. Merely opening the page changes nothing: the seed only
+    // lands in draft once the user makes an edit.
+    function builtin() {
+      var s = lastState && lastState.stages;
+      return Array.isArray(s) ? s.slice() : [];
+    }
+    function isCustom() {
+      return Array.isArray(draft[name]) && draft[name].length > 0;
+    }
+    function read() {
+      return isCustom() ? draft[name].slice() : builtin();
+    }
+    function write(next) {
+      draft[name] = next;
+      markEdited();
+    }
+
+    var box = document.createElement('div');
+    box.className = 'stages-edit';
+
+    // Walk up looking for the owning field's dependency guard, so we know
+    // whether the whole row is meant to be inert.
+    function rowDisabledNow() {
+      var n = box.parentNode;
+      while (n) {
+        if (n.getAttribute && n.getAttribute('data-disabled') === '1') return true;
+        n = n.parentNode;
+      }
+      return false;
+    }
+
+    // reapplyRowGuards() blanket-assigns `disabled` to every control under
+    // .ctl, which would wipe the first/last-position state of the move
+    // buttons. Called right after it to re-assert that state.
+    function paintMoveState() {
+      var off = rowDisabledNow();
+      var rows = box.querySelectorAll('.srow');
+      for (var k = 0; k < rows.length; k++) {
+        var btns = rows[k].querySelectorAll('button');
+        if (btns.length >= 2) {
+          btns[0].disabled = off || k === 0;
+          btns[1].disabled = off || k === rows.length - 1;
+        }
+      }
+    }
+
+    function move(from, to) {
+      var next = read();
+      if (to < 0 || to >= next.length) return;
+      var item = next.splice(from, 1)[0];
+      next.splice(to, 0, item);
+      write(next);
+      paint();
+    }
+
+    function paint() {
+      var list = read();
+      box.innerHTML = '';
+      list.forEach(function (stage, i) {
+        var row = document.createElement('div');
+        row.className = 'srow';
+
+        var idx = document.createElement('span');
+        idx.className = 'sidx';
+        idx.textContent = String(i + 1);
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.value = stage;
+        input.placeholder = '阶段名称';
+        input.addEventListener('input', function () {
+          var next = read();
+          next[i] = input.value;
+          write(next);
+        });
+
+        var up = document.createElement('button');
+        up.type = 'button';
+        up.textContent = '↑';
+        up.title = '上移';
+        up.disabled = i === 0;
+        up.addEventListener('click', function () { move(i, i - 1); });
+
+        var down = document.createElement('button');
+        down.type = 'button';
+        down.textContent = '↓';
+        down.title = '下移';
+        down.disabled = i === list.length - 1;
+        down.addEventListener('click', function () { move(i, i + 1); });
+
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.textContent = '×';
+        del.title = '删除此阶段';
+        del.addEventListener('click', function () {
+          var next = read();
+          next.splice(i, 1);
+          write(next);
+          paint();
+        });
+
+        row.appendChild(idx);
+        row.appendChild(input);
+        row.appendChild(up);
+        row.appendChild(down);
+        row.appendChild(del);
+        box.appendChild(row);
+      });
+
+      var tools = document.createElement('div');
+      tools.className = 'stools';
+
+      var add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'tiny';
+      add.textContent = '+ 添加阶段';
+      add.addEventListener('click', function () {
+        var next = read();
+        next.push('');
+        write(next);
+        paint();
+        var all = box.querySelectorAll('.srow input');
+        if (all.length) all[all.length - 1].focus();
+      });
+      tools.appendChild(add);
+
+      var restore = document.createElement('button');
+      restore.type = 'button';
+      restore.className = 'tiny';
+      restore.textContent = '恢复内置';
+      restore.title = '放弃自定义，改回内置阶段序列';
+      restore.disabled = !isCustom();
+      restore.addEventListener('click', function () {
+        if (!confirm('放弃自定义阶段，改回内置序列？')) return;
+        draft[name] = [];
+        markEdited();
+        paint();
+      });
+      tools.appendChild(restore);
+
+      var note = document.createElement('span');
+      note.className = 'snote';
+      if (isCustom() && list.length < 2) {
+        // The backend falls back to the built-in sequence below 2 stages, so
+        // say so rather than letting the save silently do nothing.
+        note.className = 'snote warn';
+        note.textContent = '至少需要 2 个阶段（当前会退回内置序列）';
+      } else if (isCustom()) {
+        note.textContent = '自定义 ' + list.length + ' 阶段';
+      } else {
+        note.textContent = '内置 ' + list.length + ' 阶段 · 直接改就能覆盖';
+      }
+      tools.appendChild(note);
+
+      box.appendChild(tools);
+      reapplyRowGuards();
+      paintMoveState();
+    }
+
+    paint();
+    controls[name] = box;
+    return box;
+  }
+
+  function mkControl(name, meta, value) {
+    var t = String((meta && meta.type) || 'string').toLowerCase();
+    var type = meta && meta.type;
+    if (t === 'boolean' || t === 'switch') return mkSwitch(name, meta, value);
+    if ((t === 'select' || t === 'enum' || t === 'string') && meta.options) {
+      return mkSelect(name, meta, value);
+    }
+    if (t === 'integer' || t === 'int' || t === 'float' || t === 'number') {
+      return mkNumber(name, meta, value);
+    }
+    if (t === 'list') {
+      if (name === 'stage_names') return mkStageEditor(name, meta, value);
+      return mkTags(name, meta, value);
+    }
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = value == null ? '' : String(value);
+    input.addEventListener('input', function () {
+      draft[name] = input.value;
+      markEdited();
+    });
+    controls[name] = input;
+    return input;
+  }
+
+  function mkField(name, meta, value) {
+    var row = document.createElement('div');
+    row.className = 'field';
+    row.setAttribute('data-field', name);
+
+    var lbl = document.createElement('div');
+    lbl.className = 'lbl';
+    var nm = document.createElement('div');
+    nm.className = 'fname';
+    nm.textContent = fieldLabel(name, meta);
+    lbl.appendChild(nm);
+
+    var hint = fieldHint(meta);
+    if (hint) {
+      var h = document.createElement('div');
+      h.className = 'fhint';
+      h.textContent = hint;
+      lbl.appendChild(h);
+    }
+
+    var key = document.createElement('div');
+    key.className = 'fkey';
+    key.textContent = name;
+    lbl.appendChild(key);
+
+    var ctl = document.createElement('div');
+    ctl.className = 'ctl';
+    ctl.appendChild(mkControl(name, meta, value));
+
+    row.appendChild(lbl);
+    row.appendChild(ctl);
+    return row;
+  }
+
+  function clearFieldErrors() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll('.field.invalid'),
+      function (el) { el.className = 'field'; }
+    );
+  }
+
+  function markFieldError(label) {
+    // Best-effort: match by the visible field label.
+    var rows = document.querySelectorAll('.field');
+    for (var i = 0; i < rows.length; i++) {
+      var nm = rows[i].querySelector('.fname');
+      if (nm && label && label.indexOf(nm.textContent) !== -1) {
+        rows[i].className = 'field invalid';
+        return;
+      }
+    }
+  }
+
+  // Which switch each field depends on. A dependent field is greyed out and
+  // non-interactive while its parent is off, so the form shows at a glance what
+  // is actually doing something. Purely presentational — the backend also
+  // guards each feature, so a stale draft can never enable something silently.
+  //
+  // `invert: true` flips the test, for the whitelist: it is meaningful only
+  // while NTR is OFF, so it greys out when NTR is switched on.
+  var DEPENDS_ON = {
+    detect_keywords: { parent: 'use_detect' },
+    exit_keywords: { parent: 'use_detect' },
+    inject_stage_hint: { parent: 'inject_progress' },
+    force_report: { parent: 'inject_progress' },
+    announce_tools: { parent: 'inject_progress' },
+    auto_advance_rounds: { parent: 'auto_advance' },
+    part_names: { parent: 'track_parts' },
+    allow_llm_desire: { parent: 'track_desire' },
+    proactive_end: { parent: 'allow_llm_reset' },
+    user_whitelist: { parent: 'ntr', invert: true },
+    scene_timeout_minutes: null,
+    stage_names: null,
+  };
+
+  function refreshDependencies() {
+    Object.keys(DEPENDS_ON).forEach(function (child) {
+      var dep = DEPENDS_ON[child];
+      if (!dep || !dep.parent) return;
+      var row = null;
+      var rows = document.querySelectorAll('.field');
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].attributes['data-field'] === child) { row = rows[i]; break; }
+      }
+      if (!row) return;
+      // An inverted dependency is live while the parent is OFF.
+      var live = !!draft[dep.parent];
+      if (dep.invert) live = !live;
+      var has = row.className.indexOf('dep-off') !== -1;
+      if (live && has) row.className = row.className.replace(/\s*dep-off/g, '');
+      else if (!live && !has) row.className = row.className + ' dep-off';
+      applyRowDisabled(row, !live);
+    });
+  }
+
+  // Greyed-out rows must stay inert across re-paints: the tag list and the
+  // stage editor rebuild their inputs on every change, so a one-shot
+  // `disabled = true` would be silently dropped. Every paint re-applies state.
+  function applyRowDisabled(row, off) {
+    if (!row) return;
+    row.setAttribute('data-disabled', off ? '1' : '0');
+    var ctl = row.querySelector('.ctl');
+    if (!ctl) return;
+    var els = ctl.querySelectorAll('input, select, textarea, button');
+    for (var j = 0; j < els.length; j++) els[j].disabled = off;
+  }
+
+  function reapplyRowGuards() {
+    var rows = document.querySelectorAll('.field[data-disabled]');
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].attributes['data-disabled'] === '1') applyRowDisabled(rows[i], true);
+    }
+  }
+
+  function buildForm(st) {
+    var host = $('cfg-form');
+    host.innerHTML = '';
+    controls = {};
+
+    var schema = st.schema || {};
+    var config = st.config || {};
+    var sections = st.sections || [];
+
+    // Anything in the schema but not covered by a section still gets shown,
+    // so a newly added schema key can never become invisible in the UI.
+    var placed = {};
+    sections.forEach(function (s) { (s.fields || []).forEach(function (f) { placed[f] = true; }); });
+    var leftovers = Object.keys(schema).filter(function (k) { return !placed[k]; });
+    if (leftovers.length) {
+      sections = sections.concat([{ key: '_extra', label: '其他', fields: leftovers }]);
+    }
+
+    sections.forEach(function (sec) {
+      var fields = (sec.fields || []).filter(function (f) { return schema[f]; });
+      if (!fields.length) return;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'cfg-section' + (sec.collapsed ? ' closed' : '');
+
+      var head = document.createElement('div');
+      head.className = 'cfg-head' + (sec.collapsed ? ' collapsed' : '');
+      var arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '▾';
+      var h3 = document.createElement('h3');
+      h3.textContent = sec.label || sec.key;
+      var cnt = document.createElement('span');
+      cnt.className = 'count';
+      cnt.textContent = fields.length + ' 项';
+      head.appendChild(arrow);
+      head.appendChild(h3);
+      head.appendChild(cnt);
+      head.addEventListener('click', function () {
+        var closed = wrap.className.indexOf('closed') !== -1;
+        wrap.className = 'cfg-section' + (closed ? '' : ' closed');
+        head.className = 'cfg-head' + (closed ? '' : ' collapsed');
+      });
+
+      var body = document.createElement('div');
+      body.className = 'cfg-fields';
+      fields.forEach(function (name) {
+        body.appendChild(mkField(name, schema[name], config[name]));
+      });
+
+      wrap.appendChild(head);
+      wrap.appendChild(body);
+      host.appendChild(wrap);
+    });
+
+    formBuilt = true;
+  }
+
+  function resetDraft(st) {
+    var config = (st && st.config) || {};
+    draft = {};
+    Object.keys(config).forEach(function (k) { draft[k] = config[k]; });
+    committed = {};
+    Object.keys(config).forEach(function (k) { committed[k] = deepClone(config[k]); });
+    if (!formBuilt) buildForm(st);
+  }
+
+  function deepClone(v) {
+    return Array.isArray(v) ? v.slice() : v;
+  }
+
+  // Refresh the controls from `draft` without rebuilding the DOM.
+  function syncFormFromDraft() {
+    Object.keys(controls).forEach(function (name) {
+      var el = controls[name];
+      if (!el || !el.tagName) return;
+      var v = draft[name];
+      if (el.tagName === 'SELECT') el.value = v == null ? '' : String(v);
+      else if (el.type === 'checkbox') el.checked = !!v;
+      else if (el.type !== 'text' && el.type !== 'number' && el.tagName !== 'TEXTAREA') return;
+      else el.value = v == null ? '' : v;
+    });
+  }
+
+  // ================================================================== //
+  // Sessions
+  // ================================================================== //
+
+  function stageBar(total, current) {
+    var bar = document.createElement('div');
+    bar.className = 'bar';
+    for (var i = 1; i <= total; i++) {
+      var seg = document.createElement('i');
+      if (i < current) seg.className = 'done';
+      else if (i === current) seg.className = 'cur';
+      bar.appendChild(seg);
+    }
+    return bar;
+  }
+
+  function renderSessions(list, totalStages) {
+    var tbody = $('rows');
+    tbody.innerHTML = '';
+    $('empty').style.display = list.length ? 'none' : 'block';
+    if (!list.length) return;
+
+    list.forEach(function (s) {
+      var tr = document.createElement('tr');
+
+      var tdSid = document.createElement('td');
+      var sidEl = document.createElement('div');
+      sidEl.className = 'sid';
+      sidEl.textContent = s.sid;
+      tdSid.appendChild(sidEl);
+
+      var tdStage = document.createElement('td');
+      var nm = document.createElement('div');
+      nm.className = 'stage-name';
+      nm.textContent = '「' + s.stage_name + '」';
+      var ix = document.createElement('div');
+      ix.className = 'stage-idx';
+      ix.textContent = s.stage + ' / ' + totalStages;
+      tdStage.appendChild(nm);
+      tdStage.appendChild(ix);
+
+      var tdBar = document.createElement('td');
+      tdBar.appendChild(stageBar(totalStages, s.stage));
+
+      var tdDesire = document.createElement('td');
+      var d = document.createElement('div');
+      d.className = 'desire';
+      var track = document.createElement('div');
+      track.className = 'track';
+      var fill = document.createElement('div');
+      fill.className = 'fill';
+      fill.style.width = Math.max(0, Math.min(100, s.desire)) + '%';
+      track.appendChild(fill);
+      var num = document.createElement('div');
+      num.className = 'num';
+      num.textContent = s.desire + (s.desire_label ? ' ' + s.desire_label : '');
+      num.title = s.desire + '/100' + (s.desire_label ? ' · ' + s.desire_label : '');
+      d.appendChild(track);
+      d.appendChild(num);
+      tdDesire.appendChild(d);
+
+      var tdRounds = document.createElement('td');
+      tdRounds.textContent = s.rounds + ' 轮';
+
+      var tdParts = document.createElement('td');
+      if (s.part_total) {
+        var top = (s.parts || []).slice(0, 2)
+          .map(function (p) { return p.part + '×' + p.count; }).join(' ');
+        var pt = document.createElement('div');
+        pt.style.fontWeight = '600';
+        pt.textContent = s.part_total + ' 次';
+        var psub = document.createElement('div');
+        psub.className = 'stage-idx';
+        psub.textContent = top;
+        tdParts.appendChild(pt);
+        tdParts.appendChild(psub);
+        tdParts.title = (s.parts || [])
+          .map(function (p) { return p.part + ' ' + p.count + ' 次'; }).join('\n');
+      } else {
+        tdParts.textContent = '—';
+        tdParts.style.color = 'var(--text-dim)';
+      }
+
+      var tdIdle = document.createElement('td');
+      tdIdle.textContent = fmtDur(s.idle_seconds);
+      tdIdle.title = '场景已持续 ' + fmtDur(s.elapsed_seconds);
+
+      var tdOps = document.createElement('td');
+      var ops = document.createElement('div');
+      ops.style.display = 'flex';
+      ops.style.gap = '4px';
+
+      function mkBtn(label, cls, handler, title) {
+        var b = document.createElement('button');
+        b.className = 'tiny ' + (cls || '');
+        b.textContent = label;
+        b.title = title || '';
+        b.addEventListener('click', function () { handler(b); });
+        return b;
+      }
+
+      ops.appendChild(mkBtn('+1', '', function (b) {
+        b.disabled = true;
+        act('/advance', s.sid, '已推进');
+      }, '推进一级'));
+      ops.appendChild(mkBtn('−1', '', function (b) {
+        b.disabled = true;
+        act('/retreat', s.sid, '已退回');
+      }, '退回一级'));
+      ops.appendChild(mkBtn('重置', 'danger', function (b) {
+        b.disabled = true;
+        act('/reset', s.sid, '已重置该会话');
+      }, '重置该会话进度'));
+
+      tdOps.appendChild(ops);
+
+      tr.appendChild(tdSid);
+      tr.appendChild(tdStage);
+      tr.appendChild(tdBar);
+      tr.appendChild(tdDesire);
+      tr.appendChild(tdRounds);
+      tr.appendChild(tdParts);
+      tr.appendChild(tdIdle);
+      tr.appendChild(tdOps);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderHeader(st) {
+    var pill = $('pill-enabled');
+    pill.textContent = st.enabled ? '已启用' : '已停用';
+    pill.className = 'pill' + (st.enabled ? ' on' : '');
+    $('btn-toggle').textContent = st.enabled ? '停用' : '启用';
+
+    $('st-active').textContent = st.enabled ? st.active_count : '—';
+    // Who the plugin answers to: NTR mode = everyone; otherwise the whitelist.
+    var wl = (st.user_whitelist || []).length;
+    $('st-scope').textContent = st.ntr
+      ? 'NTR · 全部用户'
+      : (wl ? ('白名单 · ' + wl + ' 人') : '白名单 · 未配置');
+    $('st-auto').textContent = st.auto_advance ? (st.auto_advance_rounds + ' 轮') : '关闭';
+    $('st-timeout').textContent = st.scene_timeout_minutes > 0 ? (st.scene_timeout_minutes + ' 分') : '无';
+
+    var partsTotal = 0;
+    (st.sessions || []).forEach(function (s) { partsTotal += (s.part_total || 0); });
+    var sp = $('st-parts');
+    if (sp) sp.textContent = st.track_parts ? partsTotal : '关闭';
+
+    // The dashboard is inert while the master switch is off; say so plainly and
+    // grey it out rather than hiding it, so the layout never jumps.
+    var rt = $('runtime');
+    if (rt) rt.className = st.enabled ? '' : 'off';
+    var rh = $('runtime-hint');
+    if (rh) {
+      rh.textContent = st.enabled
+        ? ''
+        : '插件未启用，以下仅为占位显示。请在上方配置里打开「启用插件」。';
+    }
+  }
+
+  function renderStages(st) {
+    var box = $('stages');
+    box.innerHTML = '';
+
+    var stages = st.stages || [];
+    if (!stages.length) return;
+
+    // Which stage index is live, if any session is in this scene right now.
+    // With several sessions we highlight the furthest one, so the bar always
+    // reads as "how far has this gone".
+    var liveIdx = -1;
+    (st.sessions || []).forEach(function (s) {
+      var i = (s.stage || 1) - 1;
+      if (i > liveIdx) liveIdx = i;
+    });
+
+    // Many stages would make per-segment labels unreadable; fall back to a
+    // clean bar with the current stage named underneath.
+    var compact = stages.length > 8;
+    box.className = 'sbar' + (compact ? ' compact' : '');
+
+    var track = document.createElement('div');
+    track.className = 'sbar-track';
+    stages.forEach(function (name, i) {
+      var seg = document.createElement('div');
+      seg.className = 'sbar-seg';
+      if (liveIdx >= 0) {
+        if (i < liveIdx) seg.className += ' done';
+        else if (i === liveIdx) seg.className += ' cur';
+      }
+
+      var idxEl = document.createElement('span');
+      idxEl.className = 'seg-idx';
+      idxEl.textContent = String(i + 1);
+      seg.appendChild(idxEl);
+
+      var label = document.createElement('span');
+      label.className = 'seg-label';
+      label.textContent = name;
+      label.title = '第 ' + (i + 1) + ' 阶段 · ' + name;
+      seg.appendChild(label);
+
+      track.appendChild(seg);
+    });
+    box.appendChild(track);
+
+    var foot = document.createElement('div');
+    foot.className = 'sbar-foot';
+
+    var now = document.createElement('span');
+    if (liveIdx >= 0) {
+      now.className = 'now';
+      now.textContent = '当前：第 ' + (liveIdx + 1) + ' / ' + stages.length +
+        ' 阶段「' + stages[liveIdx] + '」';
+    } else {
+      now.textContent = '当前没有进行中的场景';
+    }
+    foot.appendChild(now);
+
+    var custom = st.config && st.config.stage_names && st.config.stage_names.length;
+    var src = document.createElement('span');
+    src.textContent = '（' + (custom ? '自定义 ' : '内置 ') + stages.length + ' 阶段）';
+    foot.appendChild(src);
+
+    var legend = document.createElement('div');
+    legend.className = 'sbar-legend';
+    [['k-done', '已过'], ['k-cur', '进行中'], ['k-todo', '未到']].forEach(function (pair) {
+      var i = document.createElement('i');
+      i.className = pair[0];
+      legend.appendChild(i);
+      var t = document.createElement('span');
+      t.textContent = pair[1];
+      legend.appendChild(t);
+    });
+    foot.appendChild(legend);
+    box.appendChild(foot);
+
+    var hint = $('stages-hint');
+    if (hint) {
+      hint.textContent = custom ? '使用自定义阶段' : '使用内置阶段';
+    }
+  }
+
+  function renderParts(st) {
+    var grid = $('parts-grid');
+    grid.innerHTML = '';
+
+    var sessions = (st.sessions || []).filter(function (s) {
+      return s.parts && s.parts.length;
+    });
+
+    if (!st.track_parts) {
+      grid.appendChild(noteEl('分部位统计已在配置中关闭。', true));
+      return;
+    }
+    if (!sessions.length) {
+      grid.appendChild(noteEl('暂无记录。AI 在场景收尾时会调用 int_part 汇报本场次数，之后按用户显示在这里。', false));
+      return;
+    }
+
+    // Bars are scaled against the single most-hit part across all users, so
+    // the bars stay comparable between users rather than each maxing out.
+    var peak = 1;
+    sessions.forEach(function (s) {
+      (s.parts || []).forEach(function (p) { if (p.count > peak) peak = p.count; });
+    });
+
+    sessions.forEach(function (s) {
+      var card = document.createElement('div');
+      card.className = 'puser';
+
+      var head = document.createElement('div');
+      head.className = 'phead';
+      var sid = document.createElement('span');
+      sid.className = 'psid';
+      sid.textContent = s.sid;
+      head.appendChild(sid);
+      var tot = document.createElement('span');
+      tot.className = 'ptotal';
+      tot.textContent = '共 ' + s.part_total + ' 次 · ' + (s.parts || []).length + ' 个部位';
+      head.appendChild(tot);
+      var grow = document.createElement('div');
+      grow.className = 'grow';
+      head.appendChild(grow);
+      var btn = document.createElement('button');
+      btn.className = 'tiny danger';
+      btn.textContent = '清空记录';
+      btn.title = '清空该用户的分部位累计记录，不影响场景进度';
+      btn.addEventListener('click', function () {
+        if (!confirm('清空「' + s.sid + '」的部位统计？')) return;
+        btn.disabled = true;
+        clearParts(s.sid);
+      });
+      head.appendChild(btn);
+      card.appendChild(head);
+
+      var body = document.createElement('div');
+      body.className = 'pbody';
+      (s.parts || []).forEach(function (p) {
+        var row = document.createElement('div');
+        row.className = 'prow';
+
+        var nm = document.createElement('div');
+        nm.className = 'pname';
+        nm.textContent = p.part;
+        nm.title = p.part;
+
+        var ct = document.createElement('div');
+        ct.className = 'pcount';
+        ct.textContent = p.count + ' 次';
+
+        var bar = document.createElement('div');
+        bar.className = 'pbar';
+        var fill = document.createElement('i');
+        fill.style.width = Math.max(4, Math.round(p.count / peak * 100)) + '%';
+        bar.appendChild(fill);
+
+        row.appendChild(nm);
+        row.appendChild(ct);
+        row.appendChild(bar);
+        body.appendChild(row);
+      });
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+  }
+
+  function noteEl(text, warn) {
+    var d = document.createElement('div');
+    d.className = 'parts-empty';
+    d.textContent = text;
+    if (warn) d.style.color = 'var(--warn)';
+    return d;
+  }
+
+  function render(st) {
+    lastState = st;
+    renderHeader(st);
+    renderSessions(st.sessions || [], (st.stages || []).length);
+    renderStages(st);
+    renderParts(st);
+    renderConfigMeta(st);
+  }
+
+  function renderConfigMeta(st) {
+    var n = Object.keys(st.schema || {}).length;
+    $('cfg-summary').textContent = n ? (n + ' 项可配置') : '';
+  }
+
+  // ================================================================== //
+  // Data loading
+  // ================================================================== //
+
+  async function load(silent) {
+    try {
+      var st = await PPC.api.get('/status');
+      var firstTime = !formBuilt;
+      render(st);
+
+      if (firstTime) {
+        resetDraft(st);
+      } else if (!isDirty()) {
+        // Only adopt server values when the user has nothing pending,
+        // otherwise a background poll would silently revert their edits.
+        resetDraft(st);
+        syncFormFromDraft();
+      }
+      markDirty();
+
+      // Recovered: clear the error banner and re-arm the silent-failure latch.
+      load._failed = false;
+      load._down = false;
+      setBanner('');
+    } catch (e) {
+      // Auto-refresh fires every few seconds. A transient blip must not spam
+      // the user, so silent polls only update an inline banner — never a toast.
+      if (silent) {
+        if (!load._failed) {
+          load._failed = true;
+          console.warn('intimacy_progress: status load failed', errMsg(e));
+        }
+        load._down = true;
+        setBanner('无法连接后端，正在重试…（' + errMsg(e) + '）');
+        return;
+      }
+      // Explicit user action (first load / refresh button) — surface it.
+      toast('加载失败：' + errMsg(e), 'err');
+    }
+  }
+
+  function setBanner(text) {
+    var b = $('banner');
+    if (!b) return;
+    b.textContent = text || '';
+    b.style.display = text ? 'block' : 'none';
+  }
+
+  async function act(path, sid, okText) {
+    try {
+      var r = await PPC.api.post(path, { sid: sid });
+      if (r && r.ok === false) { toast(r.error || '操作失败', 'err'); load(true); return; }
+      toast(okText || '完成', 'ok');
+      load(true);
+    } catch (e) {
+      toast('操作失败：' + errMsg(e), 'err');
+      load(true);
+    }
+  }
+
+  async function clearParts(sid) {
+    try {
+      var r = await PPC.api.post('/reset_parts', { sid: sid });
+      if (r && r.ok === false) { toast(r.error || '清空失败', 'err'); load(true); return; }
+      toast('已清空 ' + (r.cleared || 0) + ' 次记录', 'ok');
+      await load(true);
+    } catch (e) {
+      toast('清空失败：' + errMsg(e), 'err');
+      await load(true);
+    }
+  }
+
+  async function saveConfig() {
+    if (!formBuilt) return;
+    clearFieldErrors();
+
+    // Send only what actually changed — a smaller payload keeps a partial
+    // failure from touching fields the user never opened.
+    var patch = {};
+    Object.keys(draft).forEach(function (k) {
+      if (!deepEqual(draft[k], committed[k])) patch[k] = draft[k];
+    });
+    if (!Object.keys(patch).length) { markDirty(); return; }
+
+    var btn = $('btn-cfg-save');
+    btn.disabled = true;
+    setSaveState('保存中…');
+
+    try {
+      var r = await PPC.api.post('/config', patch);
+      if (!r || r.ok === false) {
+        var errs = (r && r.errors) || [r && r.error].filter(Boolean);
+        errs.forEach(markFieldError);
+        setSaveState(errs.length ? errs.join('；') : '保存失败', true);
+        toast('保存失败：' + (errs[0] || '未知错误'), 'err');
+        btn.disabled = false;
+        return;
+      }
+
+      var warnings = r.warnings || [];
+      if (warnings.length) {
+        toast(warnings[0], 'err');
+        setSaveState(warnings[0], true);
+      } else {
+        toast('配置已保存并生效', 'ok');
+        setSaveState('已保存 ' + new Date().toLocaleTimeString());
+      }
+
+      commitFromServer(r.config || {});
+      await load(true);
+    } catch (e) {
+      setSaveState('保存失败：' + errMsg(e), true);
+      toast('保存失败：' + errMsg(e), 'err');
+    } finally {
+      btn.disabled = false;
+      markDirty();
+    }
+  }
+
+  function commitFromServer(config) {
+    committed = {};
+    Object.keys(config).forEach(function (k) { committed[k] = deepClone(config[k]); });
+  }
+
+  PPC.ready().then(function () {
+    resetTabs();
+
+    $('btn-refresh').addEventListener('click', function () { load(); });
+
+    $('btn-cfg-reload').addEventListener('click', async function () {
+      if (isDirty() && !confirm('放弃未保存的修改？')) return;
+      formBuilt = false;
+      await load();
+      toast('已重新载入磁盘上的配置', 'ok');
+    });
+
+    $('btn-cfg-save').addEventListener('click', saveConfig);
+
+    // Ctrl/Cmd+S saves while the page has focus.
+    document.addEventListener('keydown', function (ev) {
+      if ((ev.ctrlKey || ev.metaKey) && ev.key === 's') {
+        ev.preventDefault();
+        saveConfig();
+      }
+    });
+
+    // Warn before losing unsaved edits on navigation.
+    window.addEventListener('beforeunload', function (ev) {
+      if (isDirty()) { ev.preventDefault(); ev.returnValue = ''; }
+    });
+
+    $('btn-toggle').addEventListener('click', async function () {
+      if (!lastState) return;
+      try {
+        var r = await PPC.api.post('/toggle', { enabled: !lastState.enabled });
+        var w = (r && r.warnings) || [];
+        toast(w.length ? w[0] : (r.enabled ? '已启用' : '已停用'), w.length ? 'err' : 'ok');
+        load(true);
+      } catch (e) { toast('操作失败：' + errMsg(e), 'err'); }
+    });
+
+    $('btn-reset-all').addEventListener('click', async function () {
+      if (!confirm('结束所有进行中的场景？（分部位统计会保留）')) return;
+      try {
+        var r = await PPC.api.post('/reset', { sid: 'all' });
+        toast('已结束 ' + (r.reset || 0) + ' 个会话', 'ok');
+        load(true);
+      } catch (e) { toast('操作失败：' + errMsg(e), 'err'); }
+    });
+
+    $('btn-parts-reload').addEventListener('click', function () { load(false); });
+
+    load();
+    // Light auto-refresh so the dashboard tracks live scenes. Silent: a
+    // transient backend blip should not spam the user with toasts.
+    setInterval(function () { load(true); }, 5000);
+  });
+})();
+</script>
+</body>
+</html>
