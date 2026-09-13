@@ -1116,6 +1116,8 @@
     part_names: { parent: 'track_parts' },
     allow_llm_desire: { parent: 'track_desire' },
     proactive_end: { parent: 'allow_llm_reset' },
+    scene_image: { parent: 'inject_progress' },
+    image_max_per_round: { parent: 'scene_image' },
     user_whitelist: { parent: 'ntr', invert: true },
     scene_timeout_minutes: null,
     stage_names: null,

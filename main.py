@@ -26,7 +26,7 @@ from core.plugin import (
     PluginPage, PageMenu,
 )
 from core.chat.message_utils import KiraMessageBatchEvent
-from core.chat.message_elements import Text
+from core.chat.message_elements import Text, Image
 from core.provider import LLMRequest
 from core.prompt_manager import Prompt
 
@@ -46,6 +46,7 @@ CONFIG_SECTIONS = [
         "auto_advance", "auto_advance_rounds", "scene_timeout_minutes",
         "track_desire", "allow_llm_desire", "allow_llm_reset", "proactive_end",
     ], False),
+    ("image", "场景配图", ["scene_image", "image_max_per_round"], True),
     ("parts", "分部位统计", ["track_parts", "part_names"], True),
     ("stages", "自定义阶段", ["stage_names"], True),
 ]
@@ -118,7 +119,7 @@ class IntimacyState:
     __slots__ = ("sid", "active", "stage", "rounds", "total_rounds",
                  "desire", "last_active", "stall_rounds", "started_at",
                  "parts", "part_total", "reported",
-                 "scene_parts", "scene_part_total")
+                 "scene_parts", "scene_part_total", "images_this_round")
 
     def __init__(self, sid: str):
         self.sid = sid
@@ -142,6 +143,9 @@ class IntimacyState:
         # tally above so a late report does not inflate the scene subtotal.
         self.scene_parts: dict[str, int] = {}
         self.scene_part_total = 0
+        # Images the model has already emitted this user turn. Reset on every
+        # new user message; used to enforce `image_max_per_round`.
+        self.images_this_round = 0
 
     def reset(self, keep_parts: bool = True):
         """End the current scene.
@@ -159,6 +163,7 @@ class IntimacyState:
         self.started_at = 0.0
         self.scene_parts = {}
         self.scene_part_total = 0
+        self.images_this_round = 0
         if not keep_parts:
             self.parts = {}
             self.part_total = 0
@@ -220,6 +225,8 @@ class IntimacyProgressPlugin(BasePlugin):
         self.stage_hints: list[str] = list(DEFAULT_STAGE_HINTS)
         self.allow_llm_reset = False
         self.proactive_end = False
+        self.scene_image = False
+        self.image_max_per_round = 1
         self.log_level = "info"
         self._detect_re = None
         self._exit_re = None
@@ -521,6 +528,11 @@ class IntimacyProgressPlugin(BasePlugin):
         self.allow_llm_desire = bool(cfg.get("allow_llm_desire", False))
         self.allow_llm_reset = bool(cfg.get("allow_llm_reset", False))
         self.proactive_end = bool(cfg.get("proactive_end", False))
+        self.scene_image = bool(cfg.get("scene_image", False))
+        try:
+            self.image_max_per_round = max(1, int(cfg.get("image_max_per_round", 1)))
+        except (TypeError, ValueError):
+            self.image_max_per_round = 1
         self.log_level = str(cfg.get("log_level", "info")).lower()
 
         # Keyword sets changed -> rebuild the precompiled matchers. Only build
@@ -644,6 +656,21 @@ class IntimacyProgressPlugin(BasePlugin):
             f"| use_detect={self.use_detect} | auto_advance={self.auto_advance}"
             f"({self.auto_advance_rounds})"
         )
+        # Say up front whether the image feature can actually work — a missing
+        # default image model is otherwise only discovered at generation time.
+        if self.scene_image:
+            try:
+                self.ctx.provider_mgr.get_default_image()
+                self._log(
+                    f"scene_image on | default image model OK "
+                    f"| max {self.image_max_per_round} per round"
+                )
+            except Exception as e:
+                self._log(
+                    f"scene_image is on but no usable default image model: {e} "
+                    f"— configure one in KiraAI 设置, or AI won't be able to draw.",
+                    level="warning",
+                )
 
     async def terminate(self):
         if self._cleanup_task and not self._cleanup_task.done():
@@ -691,6 +718,7 @@ class IntimacyProgressPlugin(BasePlugin):
         st.reported = False
         st.scene_parts = {}
         st.scene_part_total = 0
+        st.images_this_round = 0
 
     def _advance(self, st: IntimacyState, steps: int = 1) -> bool:
         """Move forward N stages. Returns False if already at the last stage."""
@@ -812,6 +840,27 @@ class IntimacyProgressPlugin(BasePlugin):
                     "- 回报之后，正文请严格停在你汇报的那个阶段范围内，不要提前跳到后面的阶段。"
                 )
 
+        if self.scene_image:
+            left = max(0, self.image_max_per_round - st.images_this_round)
+            lines.append("")
+            lines.append("### 场景配图")
+            lines.append(
+                "- 氛围到位、画面感很强的时候，你可以用 `<img>画面描述</img>` 生成一张配图"
+                "（走系统配置的生图模型，会自动发给对方）。"
+            )
+            if left > 0:
+                lines.append(
+                    f"- 本回合最多生成 {self.image_max_per_round} 张图，你还剩 **{left}** 张额度。"
+                )
+            else:
+                lines.append(
+                    "- **本回合的配图额度已经用完，不要再生成图片了**，继续用文字推进即可。"
+                )
+            lines.append(
+                "- 不要每轮都画；只在值得定格的那一刻用。用文字写清楚画面："
+                "镜头、构图、光线、表情、姿态、衣着状态等，越具体越好。"
+            )
+
         lines.append("")
         lines.append("### 你可以主动控制进度")
         lines.append("- 想推进时，调用 `int_advance` 工具（可传 `reason` 说明理由）。")
@@ -917,8 +966,10 @@ class IntimacyProgressPlugin(BasePlugin):
             st.total_rounds += 1
             st.rounds += 1
             st.last_active = time.time()
-            # A new user turn starts a new round, which owes a new report.
+            # A new user turn starts a new round, which owes a new report and
+            # gets a fresh image budget.
             st.reported = False
+            st.images_this_round = 0
 
             if self.track_desire and not self._is_last_stage(st.stage):
                 st.desire = min(100, st.desire + DESIRE_PER_ROUND)
@@ -1380,6 +1431,56 @@ class IntimacyProgressPlugin(BasePlugin):
                 p.content += note
                 break
 
+    @on.after_xml_parse(priority=Priority.MEDIUM)
+    async def hook_count_scene_images(self, event: KiraMessageBatchEvent, actions: list, *_):
+        """Tally (and cap) the images the model emitted this turn.
+
+        Image generation happens inside the `<img>` tag handler, i.e. *before*
+        this stage — so by the time we see the pictures the compute is already
+        spent. The real defence is the per-round budget spelled out in the
+        prompt; this is the enforcement backstop: anything past the budget is
+        dropped so the chat cannot be flooded.
+        """
+        if not self.enabled or not self.scene_image:
+            return
+        if not self._scope_allows(event):
+            return
+        st = self.states.get(event.sid)
+        if st is None or not st.active:
+            return
+
+        budget = self.image_max_per_round - st.images_this_round
+        kept = 0
+        dropped = 0
+
+        async with self._lock:
+            for action in actions:
+                # Only message chains carry renderable elements; root-tag
+                # actions are left untouched.
+                chain = getattr(action, "message_list", None)
+                if not isinstance(chain, list):
+                    continue
+                remaining = []
+                for ele in chain:
+                    if isinstance(ele, Image):
+                        if budget - kept > 0:
+                            kept += 1
+                            remaining.append(ele)
+                        else:
+                            dropped += 1
+                        continue
+                    remaining.append(ele)
+                if dropped:
+                    action.message_list = remaining
+
+            st.images_this_round += kept
+
+        if kept or dropped:
+            self._log(
+                f"session {event.sid} images | kept={kept} dropped={dropped} "
+                f"(round budget {self.image_max_per_round}, used {st.images_this_round})"
+            )
+
     # ------------------------------------------------------------------ #
     # WebUI: sidebar page + JSON API
     # ------------------------------------------------------------------ #
@@ -1434,6 +1535,8 @@ class IntimacyProgressPlugin(BasePlugin):
             "announce_tools": self.announce_tools,
             "allow_llm_reset": self.allow_llm_reset,
             "proactive_end": self.proactive_end,
+            "scene_image": self.scene_image,
+            "image_max_per_round": self.image_max_per_round,
             "auto_advance": self.auto_advance,
             "auto_advance_rounds": self.auto_advance_rounds,
             "scene_timeout_minutes": round(self.scene_timeout / 60.0, 1),
