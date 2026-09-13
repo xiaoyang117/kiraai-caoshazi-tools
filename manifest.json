@@ -5,5 +5,5 @@
   "core_version": ">=2.14",
   "author": "miaozi",
   "description": "在亲密/性爱场景中为 LLM 提供当前进度状态，让 AI 能感知到「现在进行到哪一步了」，从而自然地推进剧情而不是原地打转或直接跳到结局。",
-  "repo": null
+  "repo": "https://github.com/xiaoyang117/kiraai-caoshazi-tools"
 }
