@@ -1776,8 +1776,15 @@ class IntimacyProgressPlugin(BasePlugin):
         order=80,
         size="small",
     )
-    async def widget_active_scenes(self) -> str:
-        """Overview dashboard widget: number of live scenes."""
+    def widget_active_scenes(self) -> str:
+        """Overview dashboard widget: number of live scenes.
+
+        NOTE: the host calls widget functions synchronously
+        (``getattr(inst, name)()`` in ``PluginManager.get_all_widgets``), so this
+        MUST be a plain ``def`` -- an ``async def`` would return a coroutine
+        object and the dashboard would print
+        ``<coroutine object ... at 0x...>``.
+        """
         if not self.enabled:
             return "off"
         return str(sum(1 for st in self.states.values() if st.active))
